@@ -1,0 +1,257 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Elegance</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --marrom-escuro: #4a2c2a;
+            --marrom-medio: #6b3f35;
+            --acobreado: #9c5b3d;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            height:100vh;
+            font-family:'Poppins',sans-serif;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:radial-gradient(circle at center,var(--marrom-medio),var(--marrom-escuro));
+        }
+
+        .container {
+            text-align:center;
+            padding:40px;
+            border-radius:25px;
+            backdrop-filter:blur(15px);
+            background:rgba(255,255,255,0.05);
+            border:1px solid rgba(255,255,255,0.1);
+            box-shadow:0 20px 40px rgba(0,0,0,0.4);
+            width:350px;
+            color:white;
+        }
+
+        .logo {
+            width:220px;
+            height:220px;
+            border-radius:50%;
+            overflow:hidden;
+            margin:0 auto 20px;
+        }
+
+        .logo img {
+            width:100%;
+            height:100%;
+            object-fit:cover;
+        }
+
+        .btn {
+            display:block;
+            width:100%;
+            padding:14px;
+            margin:10px 0;
+            border-radius:12px;
+            font-size:15px;
+            cursor:pointer;
+            border:none;
+            color:white;
+        }
+
+        .whatsapp { background:#25D366; }
+        .consulta { background:var(--acobreado); }
+        .treinamento { background:var(--marrom-medio); }
+
+        input {
+            width:100%;
+            padding:10px;
+            margin-top:10px;
+            border-radius:8px;
+            border:none;
+        }
+
+        #horarios button {
+            margin:5px;
+            padding:8px 12px;
+            border-radius:8px;
+            border:none;
+            cursor:pointer;
+            background:var(--acobreado);
+            color:white;
+        }
+
+        .ag-item {
+            margin-top:8px;
+            padding:8px;
+            background:rgba(255,255,255,0.1);
+            border-radius:6px;
+            font-size:13px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo">
+        <img src="Image/LogoImage.jpg" alt="Logo">
+    </div>
+
+    <a href="https://wa.me/5519988430250" target="_blank">
+        <button class="btn whatsapp">WhatsApp</button>
+    </a>
+
+    <button class="btn consulta" onclick="abrir('Consulta')">
+        Agendar Consulta
+    </button>
+
+    <button class="btn treinamento" onclick="abrir('Treinamento')">
+        Agendar Treinamento
+    </button>
+
+    <div id="agendamento" style="display:none;">
+        <input type="text" id="nome" placeholder="Seu nome">
+        <input type="text" id="telefone" placeholder="Seu telefone">
+        <input type="date" id="data">
+        <div id="horarios"></div>
+    </div>
+
+    <h3 style="margin-top:20px;">Seu Agendamento</h3>
+    <div id="lista"></div>
+
+</div>
+<script>
+
+    const API = "https://sheetdb.io/api/v1/o9bs51rw5v4lb";
+    const HORARIO_INICIO = 8;
+    const HORARIO_FIM = 20;
+
+    let tipoAtual = "";
+    let dataSelecionada = "";
+    let horarioSelecionado = "";
+
+    function abrir(tipo) {
+        tipoAtual = tipo;
+        document.getElementById("agendamento").style.display = "block";
+    }
+
+    document.getElementById("data").addEventListener("change", gerarHorarios);
+
+    async function gerarHorarios() {
+
+        dataSelecionada = document.getElementById("data").value;
+        if(!dataSelecionada) return;
+
+        const horariosDiv = document.getElementById("horarios");
+        horariosDiv.innerHTML = "";
+
+        const resposta = await fetch(API);
+        const agendamentos = await resposta.json();
+
+        for (let h = HORARIO_INICIO; h <= HORARIO_FIM; h++) {
+
+            const horario = (h < 10 ? "0" : "") + h + ":00";
+
+            const ocupado = agendamentos.some(a =>
+                String(a.data).trim() === String(dataSelecionada).trim() &&
+                String(a.horario).trim() === String(horario).trim()
+            );
+
+            if (!ocupado) {
+
+                const btn = document.createElement("button");
+                btn.textContent = horario;
+
+                btn.onclick = () => selecionarHorario(horario);
+
+                horariosDiv.appendChild(btn);
+            }
+        }
+    }
+
+    function selecionarHorario(horario) {
+
+        horarioSelecionado = horario;
+
+        const horariosDiv = document.getElementById("horarios");
+
+        const info = document.createElement("div");
+        info.style.marginTop = "10px";
+        info.innerHTML = `
+            <p>Horário selecionado: <strong>${horario}</strong></p>
+            <button class="btn consulta" onclick="salvarAgendamento()">
+                Salvar Agendamento
+            </button>
+        `;
+
+        horariosDiv.appendChild(info);
+    }
+
+    async function salvarAgendamento() {
+
+        const nome = document.getElementById("nome").value.trim();
+        const telefone = document.getElementById("telefone").value.trim();
+
+        if (!nome || !telefone || !dataSelecionada || !horarioSelecionado) {
+            alert("Preencha todos os campos e escolha um horário!");
+            return;
+        }
+
+        try {
+
+            const resposta = await fetch(API, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    data: [
+                        {
+                            tipo: String(tipoAtual),
+                            data: String(dataSelecionada),
+                            horario: String(horarioSelecionado),
+                            nome: String(nome),
+                            telefone: String(telefone)
+                        }
+                    ]
+                })
+            });
+
+            const resultado = await resposta.json();
+
+            if (resultado.created) {
+
+                alert("Agendamento salvo com sucesso!");
+
+                const lista = document.getElementById("lista");
+
+                lista.innerHTML = `
+                    <div class="ag-item">
+                        <strong>${tipoAtual}</strong><br>
+                        📅 ${dataSelecionada} - ⏰ ${horarioSelecionado}<br>
+                        👤 ${nome}<br>
+                        📞 ${telefone}
+                    </div>
+                `;
+
+                document.getElementById("agendamento").style.display = "none";
+
+            } else {
+                alert("Erro ao salvar na planilha.");
+            }
+
+        } catch (erro) {
+            console.error("Erro:", erro);
+            alert("Erro ao conectar com API.");
+        }
+    }
+
+</script>
+
+</body>
+</html>
