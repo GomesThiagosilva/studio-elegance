@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -11,7 +10,7 @@
     <style>
         :root {
             --marrom-escuro: #4a2c2a;
-            --marrom-medio: #6b3f35;
+            --marrom-medio: #5f2a31;
             --acobreado: #9c5b3d;
         }
 
@@ -184,6 +183,7 @@
 
         const info = document.createElement("div");
         info.style.marginTop = "10px";
+
         info.innerHTML = `
             <p>Horário selecionado: <strong>${horario}</strong></p>
             <button class="btn consulta" onclick="salvarAgendamento()">
@@ -240,6 +240,20 @@
                 `;
 
                 document.getElementById("agendamento").style.display = "none";
+
+                // MENSAGEM AUTOMÁTICA WHATSAPP
+
+                const mensagem = `Novo agendamento!
+
+    Nome: ${nome}
+    Telefone: ${telefone}
+    Tipo: ${tipoAtual}
+    Data: ${dataSelecionada}
+    Horário: ${horarioSelecionado}`;
+
+                const whatsapp = "https://wa.me/5519988430250?text=" + encodeURIComponent(mensagem);
+
+                window.open(whatsapp, "_blank");
 
             } else {
                 alert("Erro ao salvar na planilha.");
